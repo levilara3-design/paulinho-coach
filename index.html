@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#212529">
+  <title>Paulinho Coach</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-dark bg-dark sticky-top shadow-sm">
+  <div class="container">
+    <span class="navbar-brand fw-bold"><i class="bi bi-lightning-charge-fill text-warning"></i> Paulinho Coach</span>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-light btn-sm" id="btnSync" aria-label="Sincronização"></button>
+      <div class="dropdown">
+        <button class="btn btn-outline-light btn-sm" data-bs-toggle="dropdown" aria-label="Backup"><i class="bi bi-cloud-arrow-down"></i></button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><button class="dropdown-item" id="btnExport"><i class="bi bi-download me-2"></i>Exportar backup</button></li>
+          <li><label class="dropdown-item mb-0" for="fileImport" style="cursor:pointer"><i class="bi bi-upload me-2"></i>Importar backup</label></li>
+        </ul>
+        <input type="file" id="fileImport" accept="application/json" hidden>
+      </div>
+      <button class="btn btn-warning btn-sm fw-semibold" id="btnNovo"><i class="bi bi-person-plus-fill"></i> Novo aluno</button>
+    </div>
+  </div>
+</nav>
+
+<main class="container py-4">
+
+  <!-- Lembretes de troca de série -->
+  <div id="alertasSerie"></div>
+
+  <!-- Legenda + busca -->
+  <div class="row g-2 align-items-center mb-3">
+    <div class="col-12 col-md-5">
+      <input type="search" id="busca" class="form-control" placeholder="Buscar aluno...">
+    </div>
+    <div class="col-12 col-md-7 legenda small text-md-end">
+      <span class="badge text-bg-danger">Progredir já</span>
+      <span class="badge text-bg-warning">Atenção</span>
+      <span class="badge text-bg-success">Em dia</span>
+      <span class="badge text-bg-secondary">Pouca frequência</span>
+    </div>
+  </div>
+
+  <div id="listaAlunos" class="row g-3"></div>
+
+  <div id="vazio" class="text-center text-muted py-5 d-none">
+    <i class="bi bi-people display-3"></i>
+    <p class="mt-3 mb-1 fs-5">Nenhum aluno cadastrado ainda.</p>
+    <button class="btn btn-warning" id="btnNovoVazio"><i class="bi bi-person-plus-fill"></i> Cadastrar primeiro aluno</button>
+  </div>
+
+  <p class="text-center text-muted small mt-4 mb-0">
+    <i class="bi bi-info-circle"></i> Dica: clique com o botão direito (ou segure o dedo) em um aluno para editar, duplicar ou excluir.
+  </p>
+</main>
+
+<!-- Menu de contexto -->
+<ul id="ctxMenu" class="dropdown-menu shadow" style="display:none; position:fixed; z-index:2000">
+  <li><button class="dropdown-item" data-acao="editar"><i class="bi bi-pencil-square me-2"></i>Editar</button></li>
+  <li><button class="dropdown-item" data-acao="duplicar"><i class="bi bi-copy me-2"></i>Duplicar</button></li>
+  <li><hr class="dropdown-divider"></li>
+  <li><button class="dropdown-item text-danger" data-acao="excluir"><i class="bi bi-trash me-2"></i>Excluir</button></li>
+</ul>
+
+<!-- Modal aluno -->
+<div class="modal fade" id="modalAluno" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <form class="modal-content" id="formAluno" novalidate>
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalAlunoTitulo">Novo aluno</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="alunoId">
+        <div class="mb-3">
+          <label class="form-label" for="nome">Nome</label>
+          <input type="text" class="form-control" id="nome" required maxlength="60">
+          <div class="invalid-feedback">Informe o nome.</div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-5">
+            <label class="form-label" for="idade">Idade</label>
+            <input type="number" class="form-control" id="idade" min="5" max="110" required>
+            <div class="invalid-feedback">Idade inválida.</div>
+          </div>
+          <div class="col-7">
+            <label class="form-label" for="sexo">Sexo</label>
+            <select class="form-select" id="sexo" required>
+              <option value="">Selecione...</option>
+              <option>Feminino</option>
+              <option>Masculino</option>
+              <option>Outro</option>
+            </select>
+            <div class="invalid-feedback">Selecione.</div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="objetivo">Objetivo do treino</label>
+          <input type="text" class="form-control" id="objetivo" list="sugestoesObjetivo" required maxlength="80" placeholder="Ex: Hipertrofia">
+          <datalist id="sugestoesObjetivo">
+            <option value="Hipertrofia"><option value="Emagrecimento"><option value="Condicionamento físico">
+            <option value="Força"><option value="Saúde e qualidade de vida"><option value="Reabilitação">
+          </datalist>
+          <div class="invalid-feedback">Informe o objetivo.</div>
+        </div>
+        <hr>
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label small" for="dataProgressao">Última progressão de carga</label>
+            <input type="date" class="form-control" id="dataProgressao">
+          </div>
+          <div class="col-6">
+            <label class="form-label small" for="dataSerie">Última troca de série</label>
+            <input type="date" class="form-control" id="dataSerie">
+          </div>
+        </div>
+        <div class="form-text">Se deixar em branco, usa a data de hoje.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="submit" class="btn btn-warning fw-semibold">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal confirmar exclusão -->
+<div class="modal fade" id="modalExcluir" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-body text-center p-4">
+        <i class="bi bi-exclamation-triangle-fill text-danger display-4"></i>
+        <p class="mt-3 mb-0">Excluir <strong id="excluirNome"></strong>?<br><small class="text-muted">Esta ação não pode ser desfeita.</small></p>
+      </div>
+      <div class="modal-footer justify-content-center border-0 pt-0">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-danger" id="btnConfirmaExcluir">Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal PIN -->
+<div class="modal fade" id="modalPin" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <form class="modal-content" id="formPin">
+      <div class="modal-body p-4">
+        <div class="text-center mb-3"><i class="bi bi-shield-lock-fill text-warning display-4"></i></div>
+        <label class="form-label" for="pinInput">PIN de acesso</label>
+        <input type="password" class="form-control" id="pinInput" autocomplete="current-password" required>
+        <div class="text-danger small mt-2 d-none" id="pinErro">PIN incorreto. Tente de novo.</div>
+        <div class="form-text">Digite uma vez; o aparelho lembra.</div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Agora não</button>
+        <button type="submit" class="btn btn-warning fw-semibold">Entrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+  <div id="toastMsg" class="toast text-bg-dark" role="status"><div class="toast-body" id="toastTexto"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
